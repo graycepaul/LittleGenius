@@ -114,7 +114,7 @@ export default function WritingPad() {
         emoji="✏️"
         title="Writing Pad"
         subtitle="Press SPACE and each word gets its own color! Press ENTER for a new line."
-        gradient="from-green-400 to-teal-500"
+        accentColor="var(--c-writing)"
       />
 
       {/* Toolbar */}

@@ -14,24 +14,27 @@ function AlphabetTask({ task, onBack, onComplete }) {
     : Array.from({ length: 26 }, (_, i) => String.fromCharCode(97 + i))
 
   const [typed, setTyped] = useState([])
-  const [input, setInput] = useState('')
-  const inputRef = useRef(null)
-  const { addStars, markTaskComplete } = useApp()
   const [done, setDone] = useState(false)
+  const inputRefs = useRef([])
+  const { addStars, markTaskComplete } = useApp()
 
-  function handleKey(e) {
-    if (e.key === 'Backspace') {
-      setTyped(t => t.slice(0, -1))
-      return
-    }
-    const ch = e.key.length === 1 ? (task.variant === 'upper' ? e.key.toUpperCase() : e.key.toLowerCase()) : null
-    if (!ch || !/[A-Za-z]/.test(ch)) return
-    const expected = letters[typed.length]
-    if (ch === expected) {
+  useEffect(() => { inputRefs.current[0]?.focus() }, [])
+
+  useEffect(() => {
+    if (typed.length < 26) inputRefs.current[typed.length]?.focus()
+  }, [typed])
+
+  function handleChange(e, idx) {
+    const raw = e.target.value.slice(-1)
+    e.target.value = ''
+    if (!raw || !/[A-Za-z]/.test(raw)) return
+    const ch = task.variant === 'upper' ? raw.toUpperCase() : raw.toLowerCase()
+    if (ch === letters[idx]) {
       const next = [...typed, ch]
       setTyped(next)
       if (next.length === 26) {
         setDone(true)
+        addStars(task.stars)
         markTaskComplete(task.id)
         triggerStarBurst()
         onComplete && onComplete()
@@ -39,47 +42,47 @@ function AlphabetTask({ task, onBack, onComplete }) {
     }
   }
 
-  useEffect(() => { inputRef.current?.focus() }, [])
-
   return (
     <div className="max-w-2xl mx-auto">
-      <button onClick={onBack} className="text-gray-500 font-semibold mb-6 block">← Back</button>
-      <div className="bg-white rounded-3xl shadow-xl p-6 text-center">
-        <h2 className="font-fun text-2xl text-gray-700 mb-1">{task.title}</h2>
-        <p className="text-gray-400 font-semibold mb-6">Type the letters in order: A → B → C → …</p>
+      <button onClick={onBack} className="font-semibold mb-6 block" style={{ color: 'var(--c-muted)' }}>← Back</button>
+      <div className="el-card p-6 text-center">
+        <h2 className="font-fun text-2xl mb-1" style={{ color: 'var(--c-text)' }}>{task.title}</h2>
+        <p className="font-semibold mb-6" style={{ color: 'var(--c-muted)' }}>Type each letter in order — A, B, C…</p>
 
-        {/* Progress */}
         <div className="flex flex-wrap justify-center gap-2 mb-6">
           {letters.map((l, i) => {
             const isTyped = i < typed.length
             const isCurrent = i === typed.length
             return (
-              <motion.div key={l} animate={isCurrent ? { scale: [1, 1.2, 1] } : {}} transition={{ repeat: Infinity, duration: 0.8 }}
-                className={`w-10 h-10 rounded-xl font-fun text-xl flex items-center justify-center border-2 transition-all
-                  ${isTyped ? 'bg-green-400 border-green-500 text-white' : isCurrent ? 'bg-yellow-300 border-yellow-400 text-gray-800 shadow-md' : 'bg-gray-100 border-gray-200 text-gray-400'}`}>
-                {l}
-              </motion.div>
+              <div key={l} className={`relative w-10 h-10 rounded-xl font-fun text-xl border-2 transition-all
+                ${isTyped ? 'bg-green-100 border-green-400 text-green-700' : isCurrent ? 'border-indigo-400 shadow-md' : 'bg-gray-100 border-gray-200 text-gray-300'}`}
+                style={isCurrent ? { borderColor: 'var(--c-primary)', background: 'var(--c-primary-light)' } : {}}>
+                {isTyped ? (
+                  <span className="flex items-center justify-center w-full h-full">{l}</span>
+                ) : (
+                  <input
+                    ref={el => inputRefs.current[i] = el}
+                    type="text" maxLength={1}
+                    disabled={!isCurrent || done}
+                    onChange={e => handleChange(e, i)}
+                    className="w-full h-full text-center bg-transparent outline-none font-fun text-xl"
+                    style={{ color: 'var(--c-primary)', cursor: isCurrent ? 'text' : 'default' }}
+                  />
+                )}
+              </div>
             )
           })}
         </div>
 
         {done ? (
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-            <p className="font-fun text-3xl text-green-500 mb-4">🎉 Amazing! All {letters[0] === 'A' ? 'uppercase' : 'lowercase'} letters done! +{task.stars} ⭐</p>
-            <button onClick={onBack} className="bg-yellow-400 text-white font-fun text-xl px-8 py-3 rounded-2xl shadow">Back to Tasks</button>
+            <p className="font-fun text-3xl text-green-500 mb-4">🎉 Amazing! All letters done! +{task.stars} ⭐</p>
+            <button onClick={onBack} className="btn-primary text-xl px-8 py-3">Back to Tasks</button>
           </motion.div>
         ) : (
-          <>
-            <p className="font-fun text-xl text-gray-500 mb-4">
-              Next letter: <span className="text-yellow-500 text-3xl">{letters[typed.length]}</span>
-            </p>
-            <input ref={inputRef} onKeyDown={handleKey} readOnly
-              className="opacity-0 absolute w-0 h-0" autoFocus />
-            <button onClick={() => inputRef.current?.focus()}
-              className="bg-yellow-100 hover:bg-yellow-200 text-yellow-700 font-semibold px-6 py-2 rounded-full text-sm">
-              👆 Click here then start typing!
-            </button>
-          </>
+          <p className="font-semibold" style={{ color: 'var(--c-muted)' }}>
+            Type <span className="font-fun text-2xl" style={{ color: 'var(--c-primary)' }}>{letters[typed.length]}</span> next!
+          </p>
         )}
       </div>
     </div>
@@ -96,7 +99,23 @@ function FillAlphabetTask({ task, onBack, onComplete }) {
   const [answers, setAnswers] = useState({})
   const [checked, setChecked] = useState(false)
   const [score, setScore] = useState(0)
+  const inputRefs = useRef({})
   const { markTaskComplete, addStars } = useApp()
+
+  useEffect(() => {
+    const firstMissing = missingSet[0]
+    if (firstMissing) inputRefs.current[firstMissing]?.focus()
+  }, [])
+
+  function handleChange(e, l) {
+    const val = e.target.value.toUpperCase().slice(-1)
+    setAnswers(a => ({ ...a, [l]: val }))
+    if (val) {
+      const idx = missingSet.indexOf(l)
+      const next = missingSet[idx + 1]
+      if (next) setTimeout(() => inputRefs.current[next]?.focus(), 50)
+    }
+  }
 
   function check() {
     let correct = 0
@@ -109,10 +128,10 @@ function FillAlphabetTask({ task, onBack, onComplete }) {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <button onClick={onBack} className="text-gray-500 font-semibold mb-6 block">← Back</button>
-      <div className="bg-white rounded-3xl shadow-xl p-6">
-        <h2 className="font-fun text-2xl text-gray-700 mb-1 text-center">{task.title}</h2>
-        <p className="text-gray-400 font-semibold mb-6 text-center">Fill in the missing letters!</p>
+      <button onClick={onBack} className="font-semibold mb-6 block" style={{ color: 'var(--c-muted)' }}>← Back</button>
+      <div className="el-card p-6">
+        <h2 className="font-fun text-2xl mb-1 text-center" style={{ color: 'var(--c-text)' }}>{task.title}</h2>
+        <p className="font-semibold mb-6 text-center" style={{ color: 'var(--c-muted)' }}>Fill in the missing letters!</p>
 
         <div className="flex flex-wrap justify-center gap-2 mb-6">
           {letters.map(l => {
@@ -128,8 +147,9 @@ function FillAlphabetTask({ task, onBack, onComplete }) {
                 ${isWrong ? 'bg-red-100 border-red-400 text-red-500' : ''}
               `}>
                 {isMissing ? (
-                  <input type="text" maxLength={1} value={answers[l] || ''} disabled={checked}
-                    onChange={e => setAnswers(a => ({ ...a, [l]: e.target.value.toUpperCase() }))}
+                  <input type="text" maxLength={2} value={answers[l] || ''} disabled={checked}
+                    ref={el => inputRefs.current[l] = el}
+                    onChange={e => handleChange(e, l)}
                     className="w-full h-full text-center bg-transparent outline-none font-fun text-base uppercase" />
                 ) : l}
               </div>
@@ -148,10 +168,10 @@ function FillAlphabetTask({ task, onBack, onComplete }) {
 
         <div className="flex gap-3 justify-center">
           {!checked ? (
-            <button onClick={check} className="bg-gradient-to-r from-purple-400 to-pink-400 text-white font-fun text-xl px-8 py-3 rounded-2xl shadow-lg">Check! ✅</button>
+            <button onClick={check} className="btn-primary text-xl px-8 py-3">Check! ✅</button>
           ) : (
             <button onClick={() => { setAnswers({}); setChecked(false); setScore(0) }}
-              className="bg-yellow-400 hover:bg-yellow-500 text-white font-fun text-xl px-8 py-3 rounded-2xl shadow">Try Again 🔄</button>
+              className="btn-primary text-xl px-8 py-3">Try Again 🔄</button>
           )}
         </div>
       </div>
@@ -167,7 +187,20 @@ function FillNumbersTask({ task, onBack, onComplete }) {
   const [answers, setAnswers] = useState({})
   const [checked, setChecked] = useState(false)
   const [score, setScore] = useState(0)
+  const inputRefs = useRef({})
   const { markTaskComplete, addStars } = useApp()
+
+  useEffect(() => { inputRefs.current[missing[0]]?.focus() }, [])
+
+  function handleChange(e, n) {
+    const val = e.target.value
+    setAnswers(a => ({ ...a, [n]: val }))
+    if (val.length >= String(n).length) {
+      const idx = missing.indexOf(n)
+      const next = missing[idx + 1]
+      if (next) setTimeout(() => inputRefs.current[next]?.focus(), 50)
+    }
+  }
 
   function check() {
     let c = 0
@@ -180,10 +213,10 @@ function FillNumbersTask({ task, onBack, onComplete }) {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <button onClick={onBack} className="text-gray-500 font-semibold mb-6 block">← Back</button>
-      <div className="bg-white rounded-3xl shadow-xl p-6">
-        <h2 className="font-fun text-2xl text-gray-700 mb-1 text-center">{task.title}</h2>
-        <p className="text-gray-400 font-semibold mb-6 text-center">Fill in the missing numbers!</p>
+      <button onClick={onBack} className="font-semibold mb-6 block" style={{ color: 'var(--c-muted)' }}>← Back</button>
+      <div className="el-card p-6">
+        <h2 className="font-fun text-2xl mb-1 text-center" style={{ color: 'var(--c-text)' }}>{task.title}</h2>
+        <p className="font-semibold mb-6 text-center" style={{ color: 'var(--c-muted)' }}>Fill in the missing numbers!</p>
         <div className="flex flex-wrap justify-center gap-2 mb-6">
           {numbers.map(n => {
             const isMissing = missing.includes(n)
@@ -197,9 +230,11 @@ function FillNumbersTask({ task, onBack, onComplete }) {
                 ${isWrong ? 'bg-red-100 border-red-400 text-red-500' : ''}
               `}>
                 {isMissing ? (
-                  <input type="number" value={answers[n] || ''} disabled={checked} min={start} max={end}
-                    onChange={e => setAnswers(a => ({ ...a, [n]: e.target.value }))}
-                    className="w-full h-full text-center bg-transparent outline-none font-fun text-base" />
+                  <input type="number" value={answers[n] || ''} disabled={checked}
+                    ref={el => inputRefs.current[n] = el}
+                    onChange={e => handleChange(e, n)}
+                    className="w-full h-full text-center bg-transparent outline-none font-fun text-base"
+                    min={start} max={end} />
                 ) : n}
               </div>
             )
@@ -215,10 +250,10 @@ function FillNumbersTask({ task, onBack, onComplete }) {
         </AnimatePresence>
         <div className="flex justify-center">
           {!checked ? (
-            <button onClick={check} className="bg-gradient-to-r from-teal-400 to-blue-400 text-white font-fun text-xl px-8 py-3 rounded-2xl shadow-lg">Check! ✅</button>
+            <button onClick={check} className="btn-primary text-xl px-8 py-3">Check! ✅</button>
           ) : (
             <button onClick={() => { setAnswers({}); setChecked(false); setScore(0) }}
-              className="bg-yellow-400 text-white font-fun text-xl px-8 py-3 rounded-2xl shadow">Try Again 🔄</button>
+              className="btn-primary text-xl px-8 py-3">Try Again 🔄</button>
           )}
         </div>
       </div>
@@ -529,7 +564,7 @@ export default function Tasks() {
 
   return (
     <div>
-      <PageHeader emoji="⚡" title="Challenges" subtitle="Complete tasks and earn stars!" gradient="from-indigo-400 to-violet-500" />
+      <PageHeader emoji="⚡" title="Challenges" subtitle="Complete tasks and earn stars!" accentColor="var(--c-tasks)" />
       <AnimatePresence mode="wait">
         {!activeTask ? (
           <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>

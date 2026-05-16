@@ -1,216 +1,329 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useApp } from '../context/AppContext'
-import { triggerStarBurst } from '../components/ui/StarBurst'
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { useApp } from "../context/AppContext";
+import { triggerStarBurst } from "../components/ui/StarBurst";
 
 const NAV_CARDS = [
-  { path: '/reading', emoji: '📖', label: 'Reading Room', desc: 'Read amazing stories!', color: 'from-blue-400 to-cyan-400', bg: 'bg-blue-50' },
-  { path: '/writing', emoji: '✏️', label: 'Writing Pad', desc: 'Write with colorful letters!', color: 'from-green-400 to-teal-400', bg: 'bg-green-50' },
-  { path: '/flashcards', emoji: '🃏', label: 'Flash Cards', desc: 'Learn letters, numbers & more!', color: 'from-purple-400 to-pink-400', bg: 'bg-purple-50' },
-  { path: '/math', emoji: '🔢', label: 'Math World', desc: 'Count, add & explore numbers!', color: 'from-orange-400 to-yellow-400', bg: 'bg-orange-50' },
-  { path: '/tasks', emoji: '⚡', label: 'Challenges', desc: 'Fun tasks & earn stars!', color: 'from-indigo-400 to-violet-400', bg: 'bg-indigo-50' },
-  { path: '/bedtime', emoji: '🌙', label: 'Bedtime Stories', desc: 'Sleepy time stories!', color: 'from-indigo-500 to-purple-500', bg: 'bg-indigo-50' },
-  { path: '/french', emoji: '🇫🇷', label: 'French', desc: 'Learn to speak French!', color: 'from-blue-500 to-indigo-500', bg: 'bg-blue-50' },
-  { path: '/shelf', emoji: '📚', label: 'My Shelf', desc: 'Your stories & cards!', color: 'from-pink-400 to-red-400', bg: 'bg-pink-50' },
-]
+  {
+    path: "/reading",
+    emoji: "📖",
+    label: "Reading Room",
+    desc: "Read & listen to stories",
+    accent: "var(--c-reading)",
+  },
+  {
+    path: "/writing",
+    emoji: "✏️",
+    label: "Writing Pad",
+    desc: "Write in colorful letters",
+    accent: "var(--c-writing)",
+  },
+  {
+    path: "/flashcards",
+    emoji: "🃏",
+    label: "Flash Cards",
+    desc: "Letters, numbers & more",
+    accent: "var(--c-cards)",
+  },
+  {
+    path: "/math",
+    emoji: "🔢",
+    label: "Math World",
+    desc: "Count, add & discover",
+    accent: "var(--c-math)",
+  },
+  {
+    path: "/tasks",
+    emoji: "⚡",
+    label: "Challenges",
+    desc: "Fun tasks & earn stars",
+    accent: "var(--c-tasks)",
+  },
+  {
+    path: "/french",
+    emoji: "🇫🇷",
+    label: "French",
+    desc: "Learn to speak French",
+    accent: "var(--c-french)",
+  },
+  {
+    path: "/bedtime",
+    emoji: "🌙",
+    label: "Bedtime Stories",
+    desc: "Cozy stories to sleep to",
+    accent: "var(--c-bedtime)",
+  },
+  {
+    path: "/shelf",
+    emoji: "📚",
+    label: "My Shelf",
+    desc: "Your stories & progress",
+    accent: "var(--c-shelf)",
+  },
+];
 
-function AvatarPicker({ onDone }) {
-  const { AVATARS, setProfile } = useApp()
-  const [selected, setSelected] = useState(null)
-  const [name, setName] = useState('')
+function AvatarPicker({ onDone, isChanging = false }) {
+  const { AVATARS, setProfile, profile } = useApp();
+  const [selected, setSelected] = useState(isChanging ? profile?.avatar : null);
+  const [name, setName] = useState(isChanging ? profile?.name : "");
 
   function handleStart() {
-    if (!selected || !name.trim()) return
-    setProfile({ avatar: selected, name: name.trim() })
-    triggerStarBurst()
-    onDone()
+    if (!selected || !name.trim()) return;
+    setProfile({ avatar: selected, name: name.trim() });
+    triggerStarBurst();
+    onDone();
   }
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 z-50 bg-gradient-to-br from-yellow-400 via-orange-400 to-pink-400 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{
+        background:
+          "linear-gradient(135deg, var(--c-primary) 0%, #7C3AED 100%)",
+      }}
     >
       <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl text-center"
+        initial={{ scale: 0.85 }}
+        animate={{ scale: 1 }}
+        className="el-card p-8 max-w-md w-full text-center"
       >
-        <div className="text-5xl mb-3 animate-bounce">👋</div>
-        <h1 className="font-fun text-3xl text-yellow-500 mb-1">Welcome!</h1>
-        <p className="text-gray-500 font-semibold mb-6">Pick your animal friend and tell us your name!</p>
+        <div className="text-5xl mb-3 animate-float inline-block">👋</div>
+        <h1
+          className="font-fun text-3xl mb-1"
+          style={{ color: "var(--c-primary)" }}
+        >
+          {isChanging ? "Change Avatar" : "Welcome!"}
+        </h1>
+        <p className="font-semibold mb-6" style={{ color: "var(--c-muted)" }}>
+          Pick your animal friend and tell us your name!
+        </p>
 
-        {/* Avatar grid */}
         <div className="grid grid-cols-5 gap-3 mb-6">
-          {AVATARS.map(av => (
+          {AVATARS.map((av) => (
             <motion.button
               key={av.id}
-              whileTap={{ scale: 0.9 }}
+              whileTap={{ scale: 0.88 }}
               onClick={() => setSelected(av)}
-              className={`text-4xl p-2 rounded-2xl transition-all ${
+              className="text-4xl p-2 rounded-2xl transition-all"
+              style={
                 selected?.id === av.id
-                  ? 'bg-yellow-300 scale-110 shadow-md'
-                  : 'bg-gray-100 hover:bg-yellow-100'
-              }`}
+                  ? {
+                      background: "var(--c-primary-light)",
+                      outline: "3px solid var(--c-primary)",
+                      transform: "scale(1.1)",
+                    }
+                  : { background: "#F9FAFB" }
+              }
             >
               {av.emoji}
             </motion.button>
           ))}
         </div>
 
-        {/* Name input */}
         <input
           type="text"
           placeholder="What is your name? 😊"
           value={name}
-          onChange={e => setName(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleStart()}
-          className="w-full border-4 border-yellow-300 rounded-2xl px-4 py-3 text-xl font-body font-semibold text-center outline-none focus:border-yellow-500 mb-4"
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleStart()}
+          className="w-full rounded-2xl px-4 py-3 text-xl font-semibold text-center outline-none mb-4"
+          style={{
+            border: "2.5px solid var(--c-border)",
+            fontFamily: "Nunito, sans-serif",
+          }}
           maxLength={20}
         />
 
         <motion.button
-          whileTap={{ scale: 0.95 }}
+          whileTap={{ scale: 0.96 }}
           onClick={handleStart}
           disabled={!selected || !name.trim()}
-          className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 disabled:opacity-50 text-white font-fun text-2xl py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all"
+          className="btn-primary w-full text-2xl py-3"
         >
-          Let's Go! 🚀
+          {isChanging ? "Save! ✅" : "Let's Go! 🚀"}
         </motion.button>
+
+        {isChanging && (
+          <button
+            onClick={onDone}
+            className="mt-3 text-sm font-semibold"
+            style={{ color: "var(--c-muted)" }}
+          >
+            Cancel
+          </button>
+        )}
       </motion.div>
     </motion.div>
-  )
+  );
 }
 
 export default function Home() {
-  const { profile, stars, streak, badges } = useApp()
-  const navigate = useNavigate()
-  const [showAvatarPicker, setShowAvatarPicker] = useState(!profile)
+  const { profile, stars, streak, badges } = useApp();
+  const navigate = useNavigate();
+  const [showPicker, setShowPicker] = useState(!profile);
 
-  if (showAvatarPicker && !profile) {
-    return <AvatarPicker onDone={() => setShowAvatarPicker(false)} />
+  if (showPicker && !profile) {
+    return <AvatarPicker onDone={() => setShowPicker(false)} />;
   }
 
   return (
     <div>
       {/* Welcome banner */}
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl p-6 mb-6 text-white shadow-xl"
+        className="rounded-3xl p-6 mb-6 text-white shadow-lg overflow-hidden relative"
+        style={{
+          background:
+            "linear-gradient(135deg, var(--c-primary) 0%, #7C3AED 100%)",
+        }}
       >
-        <div className="flex items-center justify-between flex-wrap gap-4">
+        {/* decorative circles */}
+        <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-white/10" />
+        <div className="absolute -bottom-8 -left-4 w-24 h-24 rounded-full bg-white/10" />
+
+        <div className="relative flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-4">
-            <span className="text-6xl animate-float inline-block">{profile?.avatar?.emoji || '⭐'}</span>
+            <button
+              onClick={() => setShowPicker(true)}
+              className="text-5xl sm:text-6xl animate-float inline-block hover:scale-110 transition-transform"
+            >
+              {profile?.avatar?.emoji || "⭐"}
+            </button>
             <div>
+              <p className="text-white/70 font-semibold text-sm">
+                Good to see you,
+              </p>
               <h1 className="font-fun text-3xl sm:text-4xl">
-                Hello, {profile?.name || 'Learner'}! 👋
+                {profile?.name || "Learner"}! 👋
               </h1>
-              <p className="font-semibold text-white/90 mt-1">Ready to learn something amazing today?</p>
+              <p className="text-white/80 font-semibold mt-0.5 text-sm">
+                Ready to learn something amazing?
+              </p>
             </div>
           </div>
-          <div className="flex gap-3 flex-wrap">
-            <div className="bg-white/30 rounded-2xl px-4 py-2 text-center">
+          <div className="flex gap-3">
+            <div className="rounded-2xl px-4 py-2 text-center bg-white/20 backdrop-blur-sm">
               <div className="font-fun text-2xl">⭐ {stars}</div>
-              <div className="text-sm font-semibold">Stars</div>
+              <div className="text-xs font-bold text-white/80">Stars</div>
             </div>
-            <div className="bg-white/30 rounded-2xl px-4 py-2 text-center">
+            <div className="rounded-2xl px-4 py-2 text-center bg-white/20 backdrop-blur-sm">
               <div className="font-fun text-2xl">🔥 {streak.count}</div>
-              <div className="text-sm font-semibold">Day Streak</div>
+              <div className="text-xs font-bold text-white/80">Streak</div>
             </div>
             {badges.length > 0 && (
-              <div className="bg-white/30 rounded-2xl px-4 py-2 text-center">
+              <div className="rounded-2xl px-4 py-2 text-center bg-white/20 backdrop-blur-sm">
                 <div className="font-fun text-2xl">🏅 {badges.length}</div>
-                <div className="text-sm font-semibold">Badges</div>
+                <div className="text-xs font-bold text-white/80">Badges</div>
               </div>
             )}
           </div>
         </div>
       </motion.div>
 
-      {/* Streak encouragement */}
+      {/* Streak nudge */}
       {streak.count >= 3 && (
         <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="bg-orange-100 border-2 border-orange-300 rounded-2xl p-4 mb-6 flex items-center gap-3"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="rounded-2xl px-4 py-3 mb-6 flex items-center gap-3"
+          style={{ background: "#FFF7ED", border: "1.5px solid #FED7AA" }}
         >
-          <span className="text-3xl">🔥</span>
-          <div>
-            <p className="font-fun text-lg text-orange-600">
-              {streak.count} day streak! You're on fire!
-            </p>
-            <p className="text-sm text-orange-500 font-semibold">Keep coming back every day to grow your streak!</p>
-          </div>
+          <span className="text-2xl">🔥</span>
+          <p className="font-semibold text-orange-700 text-sm">
+            {streak.count} day streak — you're on fire! Keep it up!
+          </p>
         </motion.div>
       )}
 
-      {/* Navigation cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      {/* Section cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {NAV_CARDS.map((card, i) => (
           <motion.button
             key={card.path}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.07 }}
-            whileHover={{ scale: 1.04, y: -4 }}
+            transition={{ delay: i * 0.06 }}
+            whileHover={{ y: -4 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => navigate(card.path)}
-            className={`${card.bg} border-2 border-transparent hover:border-yellow-300 rounded-3xl p-5 text-left shadow-md hover:shadow-xl transition-all`}
+            className="el-card text-left overflow-hidden group"
           >
-            <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${card.color} flex items-center justify-center text-3xl mb-3 shadow-md`}>
-              {card.emoji}
+            {/* Accent strip */}
+            <div
+              className="h-20 flex items-center justify-center text-4xl"
+              style={{ background: `${card.accent}18` }}
+            >
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl transition-transform group-hover:scale-110"
+                style={{ background: card.accent }}
+              >
+                {card.emoji}
+              </div>
             </div>
-            <h3 className="font-fun text-lg text-gray-800">{card.label}</h3>
-            <p className="text-sm text-gray-500 font-semibold mt-1">{card.desc}</p>
+            <div className="p-3 pb-4">
+              <h3
+                className="font-fun text-base leading-tight"
+                style={{ color: "var(--c-text)" }}
+              >
+                {card.label}
+              </h3>
+              <p
+                className="text-xs font-semibold mt-0.5"
+                style={{ color: "var(--c-muted)" }}
+              >
+                {card.desc}
+              </p>
+            </div>
           </motion.button>
         ))}
-
-        {/* Change avatar card */}
-        <motion.button
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: NAV_CARDS.length * 0.07 }}
-          whileHover={{ scale: 1.04, y: -4 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={() => setShowAvatarPicker(true)}
-          className="bg-gray-50 border-2 border-transparent hover:border-yellow-300 rounded-3xl p-5 text-left shadow-md hover:shadow-xl transition-all"
-        >
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center text-3xl mb-3 shadow-md">
-            {profile?.avatar?.emoji || '🐾'}
-          </div>
-          <h3 className="font-fun text-lg text-gray-800">My Avatar</h3>
-          <p className="text-sm text-gray-500 font-semibold mt-1">Change your animal friend!</p>
-        </motion.button>
       </div>
 
-      {/* Badges section */}
+      {/* Badges */}
       {badges.length > 0 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="mt-8 bg-white rounded-3xl p-6 shadow-md"
+          className="el-card p-5 mt-6"
         >
-          <h2 className="font-fun text-2xl text-yellow-500 mb-4">🏅 My Badges</h2>
+          <h2
+            className="font-fun text-xl mb-3"
+            style={{ color: "var(--c-gold)" }}
+          >
+            🏅 My Badges
+          </h2>
           <div className="flex flex-wrap gap-3">
-            {badges.map(b => (
-              <div key={b.id} className="flex flex-col items-center bg-yellow-50 rounded-2xl p-3 border-2 border-yellow-200">
+            {badges.map((b) => (
+              <div
+                key={b.id}
+                className="flex flex-col items-center rounded-2xl p-3"
+                style={{
+                  background: "var(--c-gold-light)",
+                  border: "1.5px solid #FDE68A",
+                }}
+              >
                 <span className="text-3xl">{b.emoji}</span>
-                <span className="text-xs font-semibold text-gray-600 mt-1">{b.name}</span>
+                <span
+                  className="text-xs font-bold mt-1"
+                  style={{ color: "#92400E" }}
+                >
+                  {b.name}
+                </span>
               </div>
             ))}
           </div>
         </motion.div>
       )}
 
-      {/* Avatar picker modal when changing */}
+      {/* Avatar picker modal */}
       <AnimatePresence>
-        {showAvatarPicker && profile && (
-          <AvatarPicker onDone={() => setShowAvatarPicker(false)} />
+        {showPicker && profile && (
+          <AvatarPicker isChanging onDone={() => setShowPicker(false)} />
         )}
       </AnimatePresence>
     </div>
-  )
+  );
 }

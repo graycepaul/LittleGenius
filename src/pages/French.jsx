@@ -639,7 +639,7 @@ export default function French() {
 
   return (
     <div>
-      <PageHeader emoji="🇫🇷" title="French!" subtitle="Apprends le français — learn to speak French!" gradient="from-blue-500 to-indigo-600" />
+      <PageHeader emoji="🇫🇷" title="French!" subtitle="Apprends le français — learn to speak French!" accentColor="var(--c-french)" />
 
       <AnimatePresence mode="wait">
         {/* HOME */}

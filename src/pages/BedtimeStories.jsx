@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import PageHeader from '../components/ui/PageHeader'
-import { useSpeech } from '../hooks/useSpeech'
+import WordHighlighter from '../components/reading/WordHighlighter'
 import { BEDTIME_STORIES } from '../data/stories'
 
 // Floating star particles in the background
@@ -29,50 +29,9 @@ function Stars() {
 
 function StoryReader({ story, onClose }) {
   const [fontSize, setFontSize] = useState(24)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [wordIdx, setWordIdx] = useState(-1)
-  const { speak, stop } = useSpeech()
-  const wordsRef = useRef(story.text.split(/\s+/))
-  const playRef = useRef(false)
-
-  function playNarration() {
-    setIsPlaying(true)
-    playRef.current = true
-    speak(story.text, {
-      rate: 0.8,
-      onEnd: () => { setIsPlaying(false); setWordIdx(-1); playRef.current = false }
-    })
-  }
-
-  function stopNarration() {
-    stop()
-    setIsPlaying(false)
-    setWordIdx(-1)
-    playRef.current = false
-  }
-
-  useEffect(() => () => stop(), [])
-
-  // Split text into paragraphs → words for display
-  const paragraphs = story.text.split('\n').filter(Boolean)
-  let globalWordIdx = 0
-  const paragraphTokens = paragraphs.map(para => {
-    const tokens = para.split(/(\s+)/)
-    return tokens.map(token => {
-      const isWord = /\w/.test(token)
-      const obj = { token, isWord, globalIdx: isWord ? globalWordIdx : null }
-      if (isWord) globalWordIdx++
-      return obj
-    })
-  })
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="relative z-10"
-    >
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="relative z-10">
       {/* Header */}
       <div className={`bg-gradient-to-r ${story.color} rounded-3xl p-6 mb-6 text-white shadow-xl`}>
         <button onClick={onClose} className="mb-3 bg-white/20 hover:bg-white/40 text-white font-semibold rounded-full px-3 py-1 text-sm block">
@@ -88,56 +47,21 @@ function StoryReader({ story, onClose }) {
 
       {/* Controls */}
       <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow p-3 mb-6 flex items-center gap-3 flex-wrap">
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          onClick={isPlaying ? stopNarration : playNarration}
-          className={`flex items-center gap-2 font-fun text-lg px-5 py-2.5 rounded-2xl shadow transition-all ${
-            isPlaying ? 'bg-red-400 hover:bg-red-500 text-white' : 'bg-indigo-500 hover:bg-indigo-600 text-white'
-          }`}
-        >
-          {isPlaying ? '⏹ Stop' : '▶ Read to me'}
-        </motion.button>
-
-        {/* Font size */}
         <div className="flex items-center gap-2 bg-white rounded-full border-2 border-gray-200 px-3 py-1.5">
           <button onClick={() => setFontSize(s => Math.max(16, s - 2))} className="font-bold text-gray-600 hover:text-indigo-500">−</button>
           <span className="text-sm font-semibold text-gray-400 w-8 text-center">{fontSize}</span>
           <button onClick={() => setFontSize(s => Math.min(40, s + 2))} className="font-bold text-gray-600 hover:text-indigo-500">+</button>
         </div>
-
-        {isPlaying && (
-          <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 1 }}
-            className="text-indigo-400 font-semibold text-sm">
-            🎙 Narrating...
-          </motion.span>
-        )}
+        <p className="text-xs text-indigo-300 font-semibold ml-auto">👆 Tap a word to hear it!</p>
       </div>
 
       {/* Story text */}
       <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl p-8">
-        <div style={{ fontSize: `${fontSize}px`, lineHeight: 2 }} className="font-body text-gray-800">
-          {paragraphTokens.map((para, pIdx) => (
-            <p key={pIdx} className="mb-6">
-              {para.map(({ token, isWord, globalIdx }, tIdx) => (
-                <span
-                  key={tIdx}
-                  className={isWord && isPlaying ? 'transition-all duration-200 rounded px-0.5' : ''}
-                >
-                  {token}
-                </span>
-              ))}
-            </p>
-          ))}
-        </div>
+        <WordHighlighter text={story.text} fontSize={fontSize} />
       </div>
 
-      {/* Goodnight message */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="text-center mt-8 mb-4"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+        className="text-center mt-8 mb-4">
         <p className="font-fun text-2xl text-indigo-400">Sweet dreams! 🌙✨</p>
       </motion.div>
     </motion.div>

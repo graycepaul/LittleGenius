@@ -10,8 +10,8 @@ const NAV_ITEMS = [
   { path: '/flashcards', label: 'Cards', emoji: '🃏' },
   { path: '/math', label: 'Math', emoji: '🔢' },
   { path: '/tasks', label: 'Tasks', emoji: '⚡' },
-  { path: '/bedtime', label: 'Bedtime', emoji: '🌙' },
   { path: '/french', label: 'French', emoji: '🇫🇷' },
+  { path: '/bedtime', label: 'Bedtime', emoji: '🌙' },
   { path: '/shelf', label: 'My Shelf', emoji: '📚' },
 ]
 
@@ -22,60 +22,66 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Top bar */}
-      <header className="bg-white shadow-sm sticky top-0 z-50 border-b-4 border-yellow-300">
-        <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-3">
+      <header style={{ background: 'var(--c-card)', borderBottom: '2px solid var(--c-border)' }}
+        className="sticky top-0 z-50 shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+
           {/* Logo */}
-          <button onClick={() => navigate('/')} className="flex items-center gap-2 group">
-            <span className="text-3xl group-hover:animate-wiggle inline-block">⭐</span>
-            <span className="font-fun text-2xl text-yellow-500 hidden sm:block">EarlyLearner</span>
+          <button onClick={() => navigate('/')} className="flex items-center gap-2 shrink-0">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center text-lg"
+              style={{ background: 'var(--c-primary)' }}>
+              <span className="sparkle">⭐</span>
+            </div>
+            <span className="font-fun text-xl hidden sm:block" style={{ color: 'var(--c-primary)' }}>
+              EarlyLearner
+            </span>
           </button>
 
           {/* Desktop nav */}
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden xl:flex items-center gap-0.5">
             {NAV_ITEMS.map(item => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                end={item.path === '/'}
+              <NavLink key={item.path} to={item.path} end={item.path === '/'}
                 className={({ isActive }) =>
-                  `flex items-center gap-1 px-3 py-1.5 rounded-full font-body font-700 text-sm transition-all
+                  `flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold text-sm transition-all
                   ${isActive
-                    ? 'bg-yellow-400 text-white shadow-md scale-105'
-                    : 'text-gray-600 hover:bg-yellow-100 hover:text-yellow-600'}`
+                    ? 'text-white shadow-sm'
+                    : 'hover:bg-indigo-50'}`
+                }
+                style={({ isActive }) => isActive
+                  ? { background: 'var(--c-primary)', color: '#fff' }
+                  : { color: 'var(--c-muted)' }
                 }
               >
-                <span>{item.emoji}</span>
-                <span className="font-semibold">{item.label}</span>
+                <span className="text-base">{item.emoji}</span>
+                <span>{item.label}</span>
               </NavLink>
             ))}
           </nav>
 
           {/* Stats + avatar */}
-          <div className="flex items-center gap-3">
-            {/* Stars */}
-            <div className="flex items-center gap-1 bg-yellow-100 px-3 py-1.5 rounded-full">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 rounded-full px-3 py-1 text-sm font-bold"
+              style={{ background: 'var(--c-gold-light)', color: 'var(--c-gold)' }}>
               <span className="sparkle">⭐</span>
-              <span className="font-fun text-yellow-600 text-lg">{stars}</span>
+              <span className="font-fun text-base">{stars}</span>
             </div>
-            {/* Streak */}
-            {streak.count > 0 && (
-              <div className="hidden sm:flex items-center gap-1 bg-orange-100 px-3 py-1.5 rounded-full">
+            {streak.count >= 1 && (
+              <div className="hidden sm:flex items-center gap-1 rounded-full px-3 py-1 text-sm font-bold bg-orange-50 text-orange-500">
                 <span>🔥</span>
-                <span className="font-fun text-orange-500 text-lg">{streak.count}</span>
+                <span className="font-fun text-base">{streak.count}</span>
               </div>
             )}
-            {/* Avatar */}
             {profile && (
-              <button onClick={() => navigate('/')} className="text-2xl hover:scale-110 transition-transform">
+              <button onClick={() => navigate('/')}
+                className="w-9 h-9 rounded-full flex items-center justify-center text-xl hover:scale-110 transition-transform"
+                style={{ background: 'var(--c-primary-light)' }}>
                 {profile.avatar.emoji}
               </button>
             )}
-            {/* Mobile menu button */}
-            <button
-              onClick={() => setMenuOpen(o => !o)}
-              className="lg:hidden p-2 rounded-full hover:bg-yellow-100 text-xl"
-            >
+            {/* Hamburger */}
+            <button onClick={() => setMenuOpen(o => !o)}
+              className="xl:hidden w-9 h-9 rounded-xl flex items-center justify-center text-lg transition-colors"
+              style={{ background: menuOpen ? 'var(--c-primary-light)' : 'transparent', color: 'var(--c-text)' }}>
               {menuOpen ? '✕' : '☰'}
             </button>
           </div>
@@ -85,26 +91,21 @@ export default function Navbar() {
       {/* Mobile menu */}
       <AnimatePresence>
         {menuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="lg:hidden fixed top-16 left-0 right-0 z-40 bg-white shadow-xl border-b-4 border-yellow-300 p-4"
-          >
-            <div className="grid grid-cols-4 gap-2">
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+            className="xl:hidden fixed top-14 left-0 right-0 z-40 shadow-xl p-4"
+            style={{ background: 'var(--c-card)', borderBottom: '2px solid var(--c-border)' }}>
+            <div className="grid grid-cols-5 gap-2 max-w-md mx-auto">
               {NAV_ITEMS.map(item => (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  end={item.path === '/'}
+                <NavLink key={item.path} to={item.path} end={item.path === '/'}
                   onClick={() => setMenuOpen(false)}
                   className={({ isActive }) =>
-                    `flex flex-col items-center gap-1 p-3 rounded-2xl transition-all text-center
-                    ${isActive ? 'bg-yellow-400 text-white' : 'bg-gray-50 text-gray-600 hover:bg-yellow-100'}`
+                    `flex flex-col items-center gap-1 p-2 rounded-2xl text-center transition-all text-xs font-bold
+                    ${isActive ? 'text-white' : 'text-gray-500 hover:bg-indigo-50'}`
                   }
+                  style={({ isActive }) => isActive ? { background: 'var(--c-primary)' } : {}}
                 >
                   <span className="text-2xl">{item.emoji}</span>
-                  <span className="text-xs font-semibold">{item.label}</span>
+                  <span>{item.label}</span>
                 </NavLink>
               ))}
             </div>

@@ -17,9 +17,9 @@ function AppInner() {
   useEffect(() => { checkStreak() }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50">
+    <div className="min-h-screen" style={{ background: 'var(--c-bg)' }}>
       <Navbar />
-      <main className="max-w-7xl mx-auto px-4 py-6 pb-20">
+      <main className="max-w-6xl mx-auto px-4 py-6 pb-24">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/reading" element={<ReadingRoom />} />

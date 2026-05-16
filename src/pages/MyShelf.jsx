@@ -212,7 +212,7 @@ export default function MyShelf() {
 
   return (
     <div>
-      <PageHeader emoji="📚" title="My Shelf" subtitle="Your stories, cards and achievements!" gradient="from-pink-400 to-red-400" />
+      <PageHeader emoji="📚" title="My Shelf" subtitle="Your stories, cards and achievements!" accentColor="var(--c-shelf)" />
 
       {/* Tab bar */}
       <div className="flex gap-2 mb-6 bg-white rounded-2xl p-1.5 shadow-sm w-fit">

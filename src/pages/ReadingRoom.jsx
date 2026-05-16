@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useApp } from '../context/AppContext'
 import PageHeader from '../components/ui/PageHeader'
 import WordHighlighter from '../components/reading/WordHighlighter'
-import SpeakButton from '../components/ui/SpeakButton'
 import { READING_STORIES, LEVELS } from '../data/stories'
 
 function StoryCard({ story, onClick }) {
@@ -64,7 +63,6 @@ function StoryReader({ story, onClose }) {
 
       {/* Controls */}
       <div className="px-6 py-3 bg-gray-50 border-b border-gray-100 flex items-center gap-3 flex-wrap">
-        <SpeakButton text={story.text} label="Read aloud" size="md" />
         <div className="flex items-center gap-2 bg-white rounded-full border-2 border-gray-200 px-3 py-1">
           <button onClick={() => setFontSize(s => Math.max(14, s - 2))} className="font-bold text-gray-600 hover:text-yellow-500 text-lg w-6">−</button>
           <span className="text-sm font-semibold text-gray-500 w-8 text-center">{fontSize}px</span>
@@ -103,7 +101,7 @@ export default function ReadingRoom() {
         emoji="📖"
         title="Reading Room"
         subtitle="Click any word to hear it — tap twice for help pronouncing it!"
-        gradient="from-blue-400 to-cyan-500"
+        accentColor="var(--c-reading)"
       />
 
       <AnimatePresence mode="wait">
