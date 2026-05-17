@@ -90,16 +90,46 @@ function CardBack({ deckId, card }) {
       <p className="font-fun text-xl" style={{ color: 'var(--c-text)' }}>{card.word}</p>
     </>
   )
-  if (deckId === 'numbers') return (
-    <>
-      <p className="font-fun text-2xl mb-2" style={{ color: 'var(--c-primary)' }}>{card.word}</p>
-      <div className="flex flex-wrap justify-center gap-1 max-w-40">
-        {Array.from({ length: card.number }).map((_, i) => (
-          <span key={i} style={{ fontSize: '1.5rem' }}>{card.emoji}</span>
-        ))}
-      </div>
-    </>
-  )
+  if (deckId === 'numbers') {
+    const n = card.number
+    const tens = Math.floor(n / 10)
+    const ones = n % 10
+    return (
+      <>
+        <p className="font-fun text-2xl mb-2" style={{ color: 'var(--c-primary)' }}>{card.word}</p>
+        {n <= 20 ? (
+          <div className="flex flex-wrap justify-center gap-1 max-w-40">
+            {Array.from({ length: n }).map((_, i) => (
+              <span key={i} style={{ fontSize: '1.4rem' }}>{card.emoji}</span>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center">
+            {tens > 0 && (
+              <div className="mb-1">
+                <span className="text-xs font-bold mb-1 block" style={{ color: 'var(--c-muted)' }}>{tens} tens</span>
+                <div className="flex flex-wrap justify-center gap-0.5">
+                  {Array.from({ length: tens }).map((_, i) => (
+                    <span key={i} className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ background: 'var(--c-primary)', color: '#fff' }}>10</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {ones > 0 && (
+              <div className="mt-1">
+                <span className="text-xs font-bold mb-1 block" style={{ color: 'var(--c-muted)' }}>{ones} ones</span>
+                <div className="flex flex-wrap justify-center gap-0.5">
+                  {Array.from({ length: ones }).map((_, i) => (
+                    <span key={i} style={{ fontSize: '1.2rem' }}>{card.emoji}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </>
+    )
+  }
   if (deckId === 'sightwords') return (
     <>
       <span style={{ fontSize: '2.5rem' }}>{card.emoji}</span>

@@ -1,33 +1,97 @@
 import { useCallback, useRef } from 'react'
 
-export function useSpeech() {
-  const utteranceRef = useRef(null)
+// ── Voice cache (loaded once, shared across all hook instances) ────────────────
+let _voicesCache = []
+let _voicesLoaded = false
 
-  const speak = useCallback((text, { rate = 0.85, pitch = 1.1, onEnd } = {}) => {
+function getVoices() {
+  return new Promise(resolve => {
+    if (_voicesLoaded && _voicesCache.length) {
+      resolve(_voicesCache)
+      return
+    }
+    const immediate = window.speechSynthesis.getVoices()
+    if (immediate.length) {
+      _voicesCache = immediate
+      _voicesLoaded = true
+      resolve(immediate)
+      return
+    }
+    // Wait for browser to load voices (Chrome fires this event)
+    const handler = () => {
+      _voicesCache = window.speechSynthesis.getVoices()
+      _voicesLoaded = true
+      resolve(_voicesCache)
+    }
+    window.speechSynthesis.addEventListener('voiceschanged', handler, { once: true })
+    // Fallback: resolve after 1s even if event never fires (Safari)
+    setTimeout(() => {
+      if (!_voicesLoaded) {
+        _voicesCache = window.speechSynthesis.getVoices()
+        resolve(_voicesCache)
+      }
+    }, 1000)
+  })
+}
+
+function pickEnglishVoice(voices) {
+  // Prefer known natural-sounding voices
+  const preferred = ['Samantha', 'Karen', 'Moira', 'Tessa', 'Daniel', 'Google UK English Female', 'Google US English']
+  for (const name of preferred) {
+    const v = voices.find(v => v.name.includes(name))
+    if (v) return v
+  }
+  return voices.find(v => v.lang.startsWith('en')) || voices[0] || null
+}
+
+// ── Chrome bug: speech pauses after ~14s of page being in background ──────────
+function makeKeepAlive(intervalRef) {
+  intervalRef.current = setInterval(() => {
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.pause()
+      window.speechSynthesis.resume()
+    } else {
+      clearInterval(intervalRef.current)
+    }
+  }, 12000)
+}
+
+// ── Hook ──────────────────────────────────────────────────────────────────────
+export function useSpeech() {
+  const keepAliveRef = useRef(null)
+
+  const speak = useCallback(async (text, { rate = 0.88, pitch = 1.05, onEnd } = {}) => {
     if (!window.speechSynthesis) return
+
+    // Cancel anything currently playing
     window.speechSynthesis.cancel()
+    clearInterval(keepAliveRef.current)
+
+    // Small delay lets cancel() fully settle before new utterance
+    await new Promise(r => setTimeout(r, 80))
+
+    const voices = await getVoices()
     const utter = new SpeechSynthesisUtterance(text)
-    utter.rate = rate
+    utter.lang  = 'en-US'
+    utter.rate  = rate
     utter.pitch = pitch
-    utter.lang = 'en-US'
-    if (onEnd) utter.onend = onEnd
-    utteranceRef.current = utter
-    // Pick a friendly voice if available
-    const voices = window.speechSynthesis.getVoices()
-    const friendly = voices.find(v =>
-      v.lang.startsWith('en') && (v.name.includes('Female') || v.name.includes('Samantha') || v.name.includes('Karen'))
-    ) || voices.find(v => v.lang.startsWith('en'))
-    if (friendly) utter.voice = friendly
+
+    const voice = pickEnglishVoice(voices)
+    if (voice) utter.voice = voice
+
+    utter.onend   = () => { clearInterval(keepAliveRef.current); onEnd?.() }
+    utter.onerror = () => { clearInterval(keepAliveRef.current) }
+
     window.speechSynthesis.speak(utter)
+    makeKeepAlive(keepAliveRef)
   }, [])
+
+  const speakSlow = useCallback((text) => speak(text, { rate: 0.6, pitch: 1.05 }), [speak])
 
   const stop = useCallback(() => {
+    clearInterval(keepAliveRef.current)
     window.speechSynthesis?.cancel()
   }, [])
-
-  const speakSlow = useCallback((text) => {
-    speak(text, { rate: 0.6, pitch: 1.1 })
-  }, [speak])
 
   return { speak, speakSlow, stop }
 }

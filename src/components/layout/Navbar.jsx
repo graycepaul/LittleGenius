@@ -13,10 +13,11 @@ const NAV_ITEMS = [
   { path: '/french', label: 'French', emoji: '🇫🇷' },
   { path: '/bedtime', label: 'Bedtime', emoji: '🌙' },
   { path: '/shelf', label: 'My Shelf', emoji: '📚' },
+  { path: '/games', label: 'Games', emoji: '🎮' },
 ]
 
 export default function Navbar() {
-  const { profile, stars, streak } = useApp()
+  const { profile, stars, streak, authUser, signOut } = useApp()
   const [menuOpen, setMenuOpen] = useState(false)
   const navigate = useNavigate()
 
@@ -30,10 +31,10 @@ export default function Navbar() {
           <button onClick={() => navigate('/')} className="flex items-center gap-2 shrink-0">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center text-lg"
               style={{ background: 'var(--c-primary)' }}>
-              <span className="sparkle">⭐</span>
+              🧠
             </div>
             <span className="font-fun text-xl hidden sm:block" style={{ color: 'var(--c-primary)' }}>
-              EarlyLearner
+              LittleGenius
             </span>
           </button>
 
@@ -76,6 +77,13 @@ export default function Navbar() {
                 className="w-9 h-9 rounded-full flex items-center justify-center text-xl hover:scale-110 transition-transform"
                 style={{ background: 'var(--c-primary-light)' }}>
                 {profile.avatar.emoji}
+              </button>
+            )}
+            {authUser && (
+              <button onClick={signOut} title="Sign out"
+                className="hidden sm:flex w-9 h-9 rounded-xl items-center justify-center text-sm font-bold hover:opacity-80 transition-opacity"
+                style={{ background: 'var(--c-bg)', color: 'var(--c-muted)' }}>
+                ↩
               </button>
             )}
             {/* Hamburger */}

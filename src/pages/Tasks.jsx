@@ -495,53 +495,105 @@ function CountTypeTask({ onBack, onComplete }) {
     { emoji: '🌸', count: 6 }, { emoji: '🎈', count: 9 }, { emoji: '🦋', count: 5 },
     { emoji: '🐸', count: 8 }, { emoji: '🍭', count: 2 }, { emoji: '🐧', count: 10 }, { emoji: '🌙', count: 1 },
   ]
-  const [idx, setIdx] = useState(0)
-  const [input, setInput] = useState('')
+  const [idx, setIdx]       = useState(0)
+  const [tapped, setTapped] = useState(new Set())
+  const [phase, setPhase]   = useState('tap')  // tap | answer
+  const [answer, setAnswer] = useState('')
   const [result, setResult] = useState(null)
-  const [score, setScore] = useState(0)
+  const [score, setScore]   = useState(0)
   const { addStars, markTaskComplete } = useApp()
   const set = SETS[idx]
 
+  function handleTap(i) {
+    const next = new Set([...tapped, i])
+    setTapped(next)
+    if (next.size === set.count) setTimeout(() => setPhase('answer'), 400)
+  }
+
   function check() {
-    const correct = parseInt(input) === set.count
+    const correct = parseInt(answer) === set.count
     setResult(correct ? 'correct' : 'wrong')
     if (correct) { addStars(1); setScore(s => s + 1) }
     setTimeout(() => {
-      setResult(null); setInput('')
+      setResult(null); setAnswer(''); setTapped(new Set()); setPhase('tap')
       if (idx + 1 >= SETS.length) { markTaskComplete('count-challenge'); triggerStarBurst(); onComplete && onComplete() }
       else setIdx(i => i + 1)
     }, 1200)
   }
 
+  const opts = Array.from({ length: 6 }, (_, i) => Math.max(1, set.count - 2) + i)
+    .filter(n => n >= 1 && n <= 12)
+
   return (
     <div className="max-w-md mx-auto text-center">
-      <button onClick={onBack} className="text-gray-500 font-semibold mb-6 block">← Back</button>
-      <div className="bg-white rounded-3xl shadow-xl p-8">
-        <p className="font-semibold text-gray-400 mb-4">Count {idx + 1}/{SETS.length} · Score: {score}</p>
-        <p className="font-fun text-xl text-gray-600 mb-4">How many {set.emoji} can you count?</p>
-        <div className="flex flex-wrap justify-center gap-2 mb-6 min-h-16">
-          {Array(set.count).fill(set.emoji).map((e, i) => (
-            <motion.span key={i} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: i * 0.06 }} className="text-3xl">{e}</motion.span>
-          ))}
-        </div>
-        <input autoFocus type="number" value={input} onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && input && check()}
-          placeholder="?" disabled={!!result}
-          className="w-32 border-4 border-yellow-300 focus:border-yellow-500 rounded-2xl px-4 py-3 font-fun text-4xl text-center outline-none mb-4 mx-auto block" />
-        <AnimatePresence>
-          {result && (
-            <motion.p initial={{ scale: 0 }} animate={{ scale: 1 }}
-              className={`font-fun text-2xl mb-3 ${result === 'correct' ? 'text-green-500' : 'text-red-500'}`}>
-              {result === 'correct' ? '🎉 Yes! +1 ⭐' : `🙈 It was ${set.count}!`}
-            </motion.p>
+      <button onClick={onBack} className="font-semibold mb-6 block hover:opacity-70" style={{ color: 'var(--c-muted)' }}>← Back</button>
+      <div className="el-card p-8">
+        <p className="font-semibold mb-2" style={{ color: 'var(--c-muted)' }}>Count {idx + 1}/{SETS.length} · Score: {score}</p>
+
+        <AnimatePresence mode="wait">
+          {phase === 'tap' ? (
+            <motion.div key="tap" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <p className="font-fun text-xl mb-3" style={{ color: 'var(--c-text)' }}>
+                Tap each {set.emoji} to count! ({tapped.size}/{set.count})
+              </p>
+              <div className="flex flex-wrap justify-center gap-2 mb-4 min-h-16">
+                {Array.from({ length: set.count }, (_, i) => {
+                  const isTapped = tapped.has(i)
+                  return (
+                    <motion.button key={i}
+                      whileTap={!isTapped ? { scale: 0.8 } : {}}
+                      onClick={() => !isTapped && handleTap(i)}
+                      animate={isTapped ? { scale: 1.2 } : { scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                      className={`relative text-4xl p-1.5 rounded-2xl select-none
+                        ${isTapped ? 'ring-4 shadow-md' : 'cursor-pointer hover:scale-110'}
+                      `}
+                      style={isTapped ? { background: '#FEF3C7', ringColor: '#FCD34D' } : {}}>
+                      {set.emoji}
+                      {isTapped && (
+                        <span className="absolute -top-2 -right-2 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center text-white"
+                          style={{ background: '#F59E0B', fontSize: '10px' }}>{i + 1}</span>
+                      )}
+                    </motion.button>
+                  )
+                })}
+              </div>
+              <p className="font-fun text-5xl" style={{ color: 'var(--c-gold)' }}>
+                {tapped.size > 0 ? tapped.size : '?'}
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div key="answer" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+              <p className="font-fun text-xl mb-3" style={{ color: 'var(--c-primary)' }}>
+                You counted {tapped.size}! Pick the answer:
+              </p>
+              <div className="flex flex-wrap gap-2 justify-center mb-4">
+                {opts.map(n => (
+                  <motion.button key={n} whileTap={{ scale: 0.9 }} onClick={() => setAnswer(String(n))}
+                    className="w-12 h-12 rounded-full font-fun text-xl transition-all"
+                    style={answer === String(n)
+                      ? { background: 'var(--c-primary)', color: '#fff', transform: 'scale(1.15)' }
+                      : { background: 'var(--c-bg)', color: 'var(--c-text)' }}>
+                    {n}
+                  </motion.button>
+                ))}
+              </div>
+              <AnimatePresence>
+                {result && (
+                  <motion.p initial={{ scale: 0 }} animate={{ scale: 1 }}
+                    className={`font-fun text-2xl mb-3 ${result === 'correct' ? 'text-green-500' : 'text-red-500'}`}>
+                    {result === 'correct' ? '🎉 Yes! +1 ⭐' : `🙈 It was ${set.count}!`}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+              {!result && (
+                <button onClick={check} disabled={!answer} className="btn-primary text-xl px-8 py-3">
+                  Check! ✅
+                </button>
+              )}
+            </motion.div>
           )}
         </AnimatePresence>
-        {!result && (
-          <button onClick={check} disabled={!input}
-            className="bg-gradient-to-r from-green-400 to-teal-400 disabled:opacity-50 text-white font-fun text-xl px-8 py-3 rounded-2xl shadow-lg">
-            Check! ✅
-          </button>
-        )}
       </div>
     </div>
   )

@@ -61,6 +61,13 @@ const NAV_CARDS = [
     desc: "Your stories & progress",
     accent: "var(--c-shelf)",
   },
+  {
+    path: "/games",
+    emoji: "🎮",
+    label: "Games",
+    desc: "Play memory, balloons & spelling",
+    accent: "#8B5CF6",
+  },
 ];
 
 function AvatarPicker({ onDone, isChanging = false }) {

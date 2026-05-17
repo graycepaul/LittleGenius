@@ -1,82 +1,179 @@
-import React, { createContext, useContext } from 'react'
-import { useLocalStorage } from '../hooks/useLocalStorage'
+import React, { createContext, useContext, useState, useEffect } from 'react'
+import { auth, db } from '../firebase'
+import {
+  onAuthStateChanged,
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut as firebaseSignOut,
+} from 'firebase/auth'
+import {
+  doc, onSnapshot, setDoc, updateDoc,
+} from 'firebase/firestore'
 
 const AppContext = createContext(null)
 
-const AVATARS = [
-  { id: 'lion', emoji: '🦁', name: 'Leo' },
-  { id: 'bunny', emoji: '🐰', name: 'Bun' },
-  { id: 'bear', emoji: '🐻', name: 'Bear' },
-  { id: 'fox', emoji: '🦊', name: 'Fox' },
-  { id: 'owl', emoji: '🦉', name: 'Owl' },
-  { id: 'penguin', emoji: '🐧', name: 'Pip' },
-  { id: 'frog', emoji: '🐸', name: 'Frog' },
-  { id: 'cat', emoji: '🐱', name: 'Cat' },
-  { id: 'dog', emoji: '🐶', name: 'Pup' },
-  { id: 'duck', emoji: '🐥', name: 'Duck' },
+export const AVATARS = [
+  { id: 'lion',    emoji: '🦁', name: 'Leo'  },
+  { id: 'bunny',   emoji: '🐰', name: 'Bun'  },
+  { id: 'bear',    emoji: '🐻', name: 'Bear' },
+  { id: 'fox',     emoji: '🦊', name: 'Fox'  },
+  { id: 'owl',     emoji: '🦉', name: 'Owl'  },
+  { id: 'penguin', emoji: '🐧', name: 'Pip'  },
+  { id: 'frog',    emoji: '🐸', name: 'Frog' },
+  { id: 'cat',     emoji: '🐱', name: 'Cat'  },
+  { id: 'dog',     emoji: '🐶', name: 'Pup'  },
+  { id: 'duck',    emoji: '🐥', name: 'Duck' },
 ]
 
-export function AppProvider({ children }) {
-  const [profile, setProfile] = useLocalStorage('el_profile', null)
-  const [stars, setStars] = useLocalStorage('el_stars', 0)
-  const [streak, setStreak] = useLocalStorage('el_streak', { count: 0, lastDate: null })
-  const [savedStories, setSavedStories] = useLocalStorage('el_stories', [])
-  const [customCards, setCustomCards] = useLocalStorage('el_custom_cards', [])
-  const [completedTasks, setCompletedTasks] = useLocalStorage('el_tasks', [])
-  const [badges, setBadges] = useLocalStorage('el_badges', [])
+const DEFAULT_DATA = {
+  profile: null,
+  stars: 0,
+  streak: { count: 0, lastDate: null },
+  badges: [],
+  completedTasks: [],
+  savedStories: [],
+  customCards: [],
+}
 
+export function AppProvider({ children }) {
+  // undefined = still checking auth, null = not signed in, object = signed in
+  const [authUser, setAuthUser] = useState(undefined)
+  const [data, setData]         = useState(DEFAULT_DATA)
+
+  // ── Auth state listener ──────────────────────────────────────────────────────
+  useEffect(() => {
+    return onAuthStateChanged(auth, user => setAuthUser(user ?? null))
+  }, [])
+
+  // ── Firestore real-time listener ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!authUser) { setData(DEFAULT_DATA); return }
+
+    const ref = doc(db, 'users', authUser.uid)
+    const unsub = onSnapshot(ref, snap => {
+      if (snap.exists()) {
+        setData({ ...DEFAULT_DATA, ...snap.data() })
+      } else {
+        // First sign-in — create the user document
+        setDoc(ref, DEFAULT_DATA)
+      }
+    })
+    return unsub
+  }, [authUser])
+
+  // ── Firestore write helper ───────────────────────────────────────────────────
+  async function save(updates) {
+    if (!authUser) return
+    try {
+      await updateDoc(doc(db, 'users', authUser.uid), updates)
+    } catch {
+      // Doc may not exist yet (race condition on first sign-in)
+      await setDoc(doc(db, 'users', authUser.uid), { ...DEFAULT_DATA, ...updates })
+    }
+  }
+
+  // ── Auth ─────────────────────────────────────────────────────────────────────
+  async function signIn() {
+    const provider = new GoogleAuthProvider()
+    await signInWithPopup(auth, provider)
+  }
+
+  async function signOut() {
+    await firebaseSignOut(auth)
+  }
+
+  // ── Profile ──────────────────────────────────────────────────────────────────
+  function setProfile(profile) {
+    save({ profile })
+  }
+
+  // ── Streak ───────────────────────────────────────────────────────────────────
   function checkStreak() {
     const today = new Date().toDateString()
-    if (streak.lastDate === today) return
+    if (data.streak?.lastDate === today) return
     const yesterday = new Date(Date.now() - 86400000).toDateString()
-    setStreak({
-      count: streak.lastDate === yesterday ? streak.count + 1 : 1,
-      lastDate: today,
+    save({
+      streak: {
+        count: data.streak?.lastDate === yesterday ? (data.streak.count + 1) : 1,
+        lastDate: today,
+      }
     })
   }
 
+  // ── Stars ────────────────────────────────────────────────────────────────────
   function addStars(n) {
-    setStars(s => s + n)
+    save({ stars: (data.stars || 0) + n })
   }
 
+  // ── Stories ──────────────────────────────────────────────────────────────────
   function saveStory(story) {
-    setSavedStories(prev => [{ ...story, id: Date.now(), savedAt: new Date().toLocaleDateString() }, ...prev])
+    const updated = [
+      { ...story, id: Date.now(), savedAt: new Date().toLocaleDateString() },
+      ...(data.savedStories || []),
+    ]
+    save({ savedStories: updated })
   }
 
   function deleteStory(id) {
-    setSavedStories(prev => prev.filter(s => s.id !== id))
+    save({ savedStories: (data.savedStories || []).filter(s => s.id !== id) })
   }
 
+  // ── Custom cards ─────────────────────────────────────────────────────────────
   function addCustomCard(card) {
-    setCustomCards(prev => [{ ...card, id: Date.now() }, ...prev])
+    const updated = [{ ...card, id: Date.now() }, ...(data.customCards || [])]
+    save({ customCards: updated })
   }
 
   function deleteCustomCard(id) {
-    setCustomCards(prev => prev.filter(c => c.id !== id))
+    save({ customCards: (data.customCards || []).filter(c => c.id !== id) })
   }
 
+  // ── Tasks ────────────────────────────────────────────────────────────────────
   function markTaskComplete(taskId) {
-    if (!completedTasks.includes(taskId)) {
-      setCompletedTasks(prev => [...prev, taskId])
-      addStars(5)
-    }
+    if ((data.completedTasks || []).includes(taskId)) return
+    save({
+      completedTasks: [...(data.completedTasks || []), taskId],
+      stars: (data.stars || 0) + 5,
+    })
   }
 
+  // ── Badges ───────────────────────────────────────────────────────────────────
   function earnBadge(badge) {
-    if (!badges.find(b => b.id === badge.id)) {
-      setBadges(prev => [...prev, { ...badge, earnedAt: new Date().toLocaleDateString() }])
-    }
+    if ((data.badges || []).find(b => b.id === badge.id)) return
+    save({
+      badges: [
+        ...(data.badges || []),
+        { ...badge, earnedAt: new Date().toLocaleDateString() },
+      ]
+    })
   }
 
   return (
     <AppContext.Provider value={{
-      profile, setProfile,
-      stars, addStars,
-      streak, checkStreak,
-      savedStories, saveStory, deleteStory,
-      customCards, addCustomCard, deleteCustomCard,
-      completedTasks, markTaskComplete,
-      badges, earnBadge,
+      // Auth
+      authUser,
+      signIn,
+      signOut,
+      // Profile
+      profile:          data.profile,
+      setProfile,
+      // Progress
+      stars:            data.stars    || 0,
+      addStars,
+      streak:           data.streak   || { count: 0, lastDate: null },
+      checkStreak,
+      badges:           data.badges   || [],
+      earnBadge,
+      // Content
+      savedStories:     data.savedStories  || [],
+      saveStory,
+      deleteStory,
+      customCards:      data.customCards   || [],
+      addCustomCard,
+      deleteCustomCard,
+      completedTasks:   data.completedTasks || [],
+      markTaskComplete,
+      // Constants
       AVATARS,
     }}>
       {children}
