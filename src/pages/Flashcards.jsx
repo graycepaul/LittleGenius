@@ -5,7 +5,8 @@ import PageHeader from '../components/ui/PageHeader'
 import { triggerStarBurst } from '../components/ui/StarBurst'
 import {
   LETTER_CARDS, NUMBER_CARDS, SIGHT_WORD_CARDS, COLOR_CARDS, SHAPE_CARDS,
-  HOUSEHOLD_CARDS, PLANET_CARDS, VEHICLE_CARDS, BIRD_CARDS,
+  HOUSEHOLD_CARDS, KITCHEN_CARDS, SIGN_CARDS, FLAG_CARDS, WARDROBE_CARDS,
+  PLANET_CARDS, VEHICLE_CARDS, BIRD_CARDS,
   FRUIT_CARDS, VEGETABLE_CARDS, EMOTION_CARDS, SPORT_CARDS,
   DECK_TYPES,
 } from '../data/flashcards'
@@ -18,6 +19,10 @@ const DECK_DATA = {
   colors:     COLOR_CARDS,
   shapes:     SHAPE_CARDS,
   household:  HOUSEHOLD_CARDS,
+  kitchen:    KITCHEN_CARDS,
+  signs:      SIGN_CARDS,
+  flags:      FLAG_CARDS,
+  wardrobe:   WARDROBE_CARDS,
   planets:    PLANET_CARDS,
   vehicles:   VEHICLE_CARDS,
   birds:      BIRD_CARDS,
@@ -35,6 +40,10 @@ function getSpokenText(deckId, card) {
   if (deckId === 'colors')     return `${card.name}. Things that are ${card.name.toLowerCase()}: ${card.things}.`
   if (deckId === 'shapes')     return `${card.name}. ${card.fun}`
   if (deckId === 'household')  return `${card.word}. ${card.sentence}`
+  if (deckId === 'kitchen')    return `${card.word}. ${card.sentence}`
+  if (deckId === 'wardrobe')   return `${card.word}. ${card.sentence}`
+  if (deckId === 'signs')      return `${card.word}. ${card.meaning}`
+  if (deckId === 'flags')      return `${card.country}. The capital is ${card.capital}. It is in ${card.continent}.`
   if (deckId === 'planets')    return `${card.word}. ${card.fact}`
   if (deckId === 'vehicles')   return `${card.word}. It goes: ${card.sound}`
   if (deckId === 'birds')      return `${card.word}. ${card.fact}`
@@ -42,7 +51,7 @@ function getSpokenText(deckId, card) {
   if (deckId === 'vegetables') return `${card.word}. It is ${card.colour}.`
   if (deckId === 'emotions')   return `${card.word}. ${card.sentence}`
   if (deckId === 'sports')     return `${card.word}. You ${card.action}.`
-  return card.word || ''
+  return card.word || card.country || ''
 }
 
 // ── Card front content ─────────────────────────────────────────────────────────
@@ -68,6 +77,21 @@ function CardFront({ deckId, card, accentColor }) {
       <div className="w-28 h-28 rounded-full shadow-inner border-4 border-white mb-3"
         style={{ background: card.hex }} />
       <span className="font-fun text-2xl" style={{ color: 'var(--c-text)' }}>{card.name}</span>
+    </>
+  )
+  if (deckId === 'flags') return (
+    <>
+      <span style={{ fontSize: '5rem' }}>{card.emoji}</span>
+      <span className="font-fun text-xl mt-3 text-center" style={{ color: 'var(--c-text)' }}>{card.country}</span>
+    </>
+  )
+  if (deckId === 'signs') return (
+    <>
+      <span style={{ fontSize: '3rem' }}>{card.emoji}</span>
+      <div className="mt-3 px-5 py-2 rounded-xl font-fun text-xl font-black tracking-widest text-white"
+        style={{ background: accentColor }}>
+        {card.word}
+      </div>
     </>
   )
   // Generic: large emoji + word
@@ -165,11 +189,27 @@ function CardBack({ deckId, card }) {
       <p className="text-sm font-semibold text-center px-2" style={{ color: 'var(--c-muted)' }}>{card.fun}</p>
     </>
   )
-  if (deckId === 'household') return (
+  if (deckId === 'household' || deckId === 'kitchen' || deckId === 'wardrobe') return (
     <>
       <span style={{ fontSize: '3.5rem' }}>{card.emoji}</span>
       <p className="font-fun text-xl mt-2 mb-1" style={{ color: 'var(--c-primary)' }}>{card.word}</p>
       <p className="text-sm font-semibold text-center px-2" style={{ color: 'var(--c-muted)' }}>{card.sentence}</p>
+    </>
+  )
+  if (deckId === 'signs') return (
+    <>
+      <span style={{ fontSize: '3rem' }}>{card.emoji}</span>
+      <p className="font-fun text-xl mt-2 mb-1" style={{ color: 'var(--c-primary)' }}>{card.word}</p>
+      <p className="text-sm font-semibold text-center px-2" style={{ color: 'var(--c-muted)' }}>{card.meaning}</p>
+    </>
+  )
+  if (deckId === 'flags') return (
+    <>
+      <span style={{ fontSize: '3.5rem' }}>{card.emoji}</span>
+      <p className="font-fun text-xl mt-2 mb-0.5" style={{ color: 'var(--c-primary)' }}>{card.country}</p>
+      <p className="text-xs font-bold mb-0.5" style={{ color: 'var(--c-muted)' }}>Capital: {card.capital}</p>
+      <span className="mt-1 px-3 py-0.5 rounded-full text-xs font-bold text-white"
+        style={{ background: 'var(--c-primary)' }}>{card.continent}</span>
     </>
   )
   if (deckId === 'planets') return (
